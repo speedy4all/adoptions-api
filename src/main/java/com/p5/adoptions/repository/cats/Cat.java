@@ -8,9 +8,5 @@ import javax.persistence.Entity;
 public class Cat extends Animal
 {
 
-    //    Bidirectional
-    //    @ManyToOne
-    //    @JoinColumn(name = "shelter_id")
-    //    private AnimalShelter shelter;
 
 }
