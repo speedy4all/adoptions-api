@@ -79,4 +79,33 @@ public class ShelterDTO {
         this.dogs = dogs;
         return this;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        ShelterDTO that = (ShelterDTO) o;
+
+        if (!id.equals(that.id))
+        {
+            return false;
+        }
+        return name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = id.hashCode();
+        result = 31 * result + name.hashCode();
+        return result;
+    }
 }

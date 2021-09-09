@@ -1,7 +1,5 @@
 package com.p5.adoptions.service;
 
-import com.p5.adoptions.repository.animal.Animal;
-import com.p5.adoptions.repository.animal.AnimalRepository;
 import com.p5.adoptions.repository.cats.Cat;
 import com.p5.adoptions.repository.dogs.Dog;
 import com.p5.adoptions.repository.shelters.AnimalShelter;
@@ -17,18 +15,12 @@ import com.p5.adoptions.service.exceptions.ValidationException;
 import com.p5.adoptions.service.exceptions.Violation;
 import com.p5.adoptions.service.validations.OnCreate;
 import com.p5.adoptions.service.validations.OnUpdate;
-import org.springframework.beans.factory.parsing.BeanDefinitionParsingException;
-import org.springframework.beans.factory.parsing.Location;
-import org.springframework.beans.factory.parsing.Problem;
-import org.springframework.boot.logging.DeferredLogs;
-import org.springframework.boot.origin.TextResourceOrigin;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import javax.persistence.EntityNotFoundException;
 import javax.validation.Valid;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -36,14 +28,17 @@ import java.util.stream.Collectors;
 
 @Service
 @Validated
-public class AnimalShelterService {
+public class AnimalShelterService
+{
     private final AnimalShelterRepository animalShelterRepository;
 
-    public AnimalShelterService(AnimalShelterRepository animalShelterRepository) {
+    public AnimalShelterService(AnimalShelterRepository animalShelterRepository)
+    {
         this.animalShelterRepository = animalShelterRepository;
     }
 
-    public ListDTO<ShelterDTO> findAll() {
+    public ListDTO<ShelterDTO> findAll()
+    {
         ListDTO<ShelterDTO> listDTO = new ListDTO<>();
 
         List<AnimalShelter> allShelters = animalShelterRepository.findAll();
@@ -55,64 +50,78 @@ public class AnimalShelterService {
     }
 
     @Validated(OnCreate.class)
-    public ShelterDTO createShelter(@Valid ShelterDTO animalShelter) {
+    public ShelterDTO createShelter(@Valid ShelterDTO animalShelter)
+    {
         validateShelterLocation(animalShelter);
 
         AnimalShelter shelter = ShelterAdapter.fromDTO(animalShelter);
         return ShelterAdapter.toDTO(animalShelterRepository.save(shelter));
     }
 
-    private void validateShelterLocation(ShelterDTO animalShelter) {
+    // public for Test visibility
+    public void validateShelterLocation(ShelterDTO animalShelter)
+    {
         String location = animalShelter.getLocation().toLowerCase(Locale.ROOT);
-        if(!location.contains("brasov") && !location.contains("iasi")) {
+        if (!location.contains("brasov") && !location.contains("iasi"))
+        {
             throw new ShelterLocationException("Brasov or Iasi is required");
         }
     }
 
-    private void validateShelter(ShelterDTO shelterDTO) {
+    private void validateShelter(ShelterDTO shelterDTO)
+    {
         ApiError error = new ApiError(HttpStatus.CONFLICT, "Shelter validation failed");
 
-        if(shelterDTO.getDogs().isEmpty()) {
+        if (shelterDTO.getDogs().isEmpty())
+        {
             error.getViolations().add(new Violation("dogs", "Minimum 1 dog pls"));
         }
-        if(shelterDTO.getName().contains("_")) {
+        if (shelterDTO.getName().contains("_"))
+        {
             error.getViolations().add(new Violation("name", "No underscore('_') in name "));
         }
 
-        if(!error.getViolations().isEmpty()) {
+        if (!error.getViolations().isEmpty())
+        {
             throw new ValidationException(error);
         }
     }
 
     @Validated(OnUpdate.class)
-    public ShelterDTO updateShelter(Integer id, @Valid ShelterDTO animalShelter) {
+    public ShelterDTO updateShelter(Integer id, @Valid ShelterDTO animalShelter)
+    {
         validateShelterLocation(animalShelter);
         validateShelter(animalShelter);
 
 
         AnimalShelter shelter = getShelterById(id);
-        if (!shelter.getId().equals(animalShelter.getId())) {
+        if (!shelter.getId().equals(animalShelter.getId()))
+        {
             throw new RuntimeException("Id of entity not the same with path id");
         }
 
         return ShelterAdapter.toDTO(animalShelterRepository.save(ShelterAdapter.fromDTO(animalShelter)));
     }
 
-    public ShelterDTO findById(Integer id) {
+    public ShelterDTO findById(Integer id)
+    {
         return ShelterAdapter.toDTO(getShelterById(id));
     }
 
-    public void deleteShelter(Integer id) {
+    public void deleteShelter(Integer id)
+    {
         animalShelterRepository.deleteById(id);
     }
 
-    public List<CatDTO> findAllCatsByShelter(Integer shelterId) {
+    public List<CatDTO> findAllCatsByShelter(Integer shelterId)
+    {
         AnimalShelter shelter = getShelterById(shelterId);
 
         return CatAdapter.toDTOList(shelter.getCats());
     }
 
-    public List<CatDTO> addNewCatToShelter(Integer shelterId, CatDTO cat) {
+    public List<CatDTO> addNewCatToShelter(Integer shelterId, CatDTO cat)
+    {
         AnimalShelter shelter = getShelterById(shelterId);
 
         shelter.getCats().add(CatAdapter.fromDTO(cat));
@@ -122,11 +131,13 @@ public class AnimalShelterService {
         return CatAdapter.toDTOList(shelter.getCats());
     }
 
-    public Cat updateCatInShelter(Integer shelterId, Integer catId, Cat cat) {
+    public Cat updateCatInShelter(Integer shelterId, Integer catId, Cat cat)
+    {
         AnimalShelter shelter = getShelterById(shelterId);
 
         List<Cat> newCats = shelter.getCats().stream().map(c -> {
-            if (c.getId().equals(catId)) {
+            if (c.getId().equals(catId))
+            {
                 cat.setId(catId);
                 return cat;
             }
@@ -140,24 +151,31 @@ public class AnimalShelterService {
         return cat;
     }
 
-    public void deleteCatInShelter(Integer shelterId, Integer catId) {
+    public void deleteCatInShelter(Integer shelterId, Integer catId)
+    {
         AnimalShelter shelter = getShelterById(shelterId);
-        List<Cat> newCats = shelter.getCats().stream().filter(c -> !c.getId().equals(catId)).collect(Collectors.toList());
+        List<Cat> newCats = shelter.getCats()
+                                   .stream()
+                                   .filter(c -> !c.getId().equals(catId))
+                                   .collect(Collectors.toList());
         shelter.setCats(newCats);
         animalShelterRepository.save(shelter);
     }
 
-    public List<Dog> findAllDogsByShelter(Integer shelterId) {
+    public List<Dog> findAllDogsByShelter(Integer shelterId)
+    {
         AnimalShelter shelter = getShelterById(shelterId);
         return shelter.getDogs();
     }
 
-    private AnimalShelter getShelterById(Integer id) {
+    private AnimalShelter getShelterById(Integer id)
+    {
         Optional<AnimalShelter> optional = animalShelterRepository.findById(id);
         return optional.orElseThrow(() -> new EntityNotFoundException("Shelter with id " + id + " not found"));
     }
 
-    public List<Dog> addNewDogToShelter(Integer shelterId, Dog dog) {
+    public List<Dog> addNewDogToShelter(Integer shelterId, Dog dog)
+    {
         AnimalShelter shelter = getShelterById(shelterId);
 
         shelter.getDogs().add(dog);
@@ -167,11 +185,13 @@ public class AnimalShelterService {
         return shelter.getDogs();
     }
 
-    public Dog updateDogInShelter(Integer shelterId, Integer dogId, Dog dog) {
+    public Dog updateDogInShelter(Integer shelterId, Integer dogId, Dog dog)
+    {
         AnimalShelter shelter = getShelterById(shelterId);
 
         List<Dog> newDogs = shelter.getDogs().stream().map(d -> {
-            if (d.getId().equals(dogId)) {
+            if (d.getId().equals(dogId))
+            {
                 dog.setId(dogId);
                 return dog;
             }
@@ -185,14 +205,16 @@ public class AnimalShelterService {
         return dog;
     }
 
-    public void deleteDogInShelter(Integer shelterId, Integer dogId) {
+    public void deleteDogInShelter(Integer shelterId, Integer dogId)
+    {
         AnimalShelter shelter = getShelterById(shelterId);
 
         boolean removed = shelter.getDogs().removeIf(d -> d.getId().equals(dogId));
 
         animalShelterRepository.save(shelter);
 
-        if(!removed) {
+        if (!removed)
+        {
             throw new RuntimeException("Already deleted or entity missing");
         }
     }
